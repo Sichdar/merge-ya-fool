@@ -10,6 +10,8 @@ html, body {
   -webkit-text-size-adjust: 100%;
 }
 body { touch-action: manipulation; }
+/* Game pages (set by MYF.blockZoom): pin the page so iPhone Safari can't scroll or rubber-band it */
+html.myf-locked, html.myf-locked body { position: fixed; inset: 0; width: 100%; overflow: hidden; touch-action: none; }
 a { color: var(--ink); }
 button, .btn {
   font: inherit; font-weight: 700; min-height: 48px; padding: 0 14px; border-radius: 14px;

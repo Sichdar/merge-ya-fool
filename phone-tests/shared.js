@@ -97,15 +97,30 @@
     }
   }
 
-  // Stops pinch-zoom and double-tap zoom on iPhone, which ignores user-scalable=no.
+  // Locks a game page: no scrolling, no pinch-zoom, no double-tap zoom.
+  // iPhone Safari ignores user-scalable=no and overflow:hidden on body, so (v0.0.2, after Fabio's
+  // iPhone test showed 6 scrolls and a zoom): pin the page with position:fixed (CSS class myf-locked),
+  // cancel every touchmove (pointer events still arrive, so dragging keeps working),
+  // cancel Safari's gesture events, and cancel the second tap of a fast double tap.
   function blockZoom() {
-    document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
-    document.addEventListener('touchmove', function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
-    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    document.documentElement.classList.add('myf-locked');
+    var stop = function (e) { if (e.cancelable) e.preventDefault(); };
+    ['gesturestart', 'gesturechange', 'gestureend', 'dblclick', 'contextmenu'].forEach(function (t) {
+      document.addEventListener(t, stop, { passive: false });
+    });
+    document.addEventListener('touchmove', stop, { passive: false });
+    document.addEventListener('touchstart', function (e) { if (e.touches && e.touches.length > 1) stop(e); }, { passive: false });
+    var lastEnd = 0;
+    document.addEventListener('touchend', function (e) {
+      var now = Date.now();
+      if (now - lastEnd < 350 && e.changedTouches && e.changedTouches.length === 1) stop(e);
+      lastEnd = now;
+    }, { passive: false });
+    window.addEventListener('scroll', function () { if (window.scrollX || window.scrollY) window.scrollTo(0, 0); }, { passive: true });
   }
 
   window.MYF = {
-    VERSION: '0.0.1',
+    VERSION: '0.0.2',
     itemSVG: itemSVG, generatorSVG: generatorSVG, NAMES: NAMES,
     sparkle: sparkle, deviceLine: deviceLine, copyText: copyText, blockZoom: blockZoom
   };
