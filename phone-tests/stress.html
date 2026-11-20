@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FFF4E0">
+<title>Smoothness test · Merge ya Fool</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body {
+    display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden;
+    padding: env(safe-area-inset-top) 8px env(safe-area-inset-bottom);
+  }
+  #head {
+    flex: 0 0 auto; background: var(--card); border: 3px solid var(--ink); border-radius: 14px;
+    padding: 6px 10px; margin: 6px 0; font-size: 13px; line-height: 1.4;
+  }
+  #fps { font-size: 22px; font-weight: 800; }
+  #result { margin-top: 2px; }
+  #wrap { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  #grid { display: grid; grid-template-columns: repeat(var(--cols, 5), var(--c, 60px)); grid-auto-rows: var(--c, 60px); gap: 4px; }
+  .slot { background: var(--cell); border-radius: 14px; box-shadow: inset 0 -3px 0 var(--cellb); position: relative; }
+  .bob { position: absolute; inset: 3%; will-change: transform; transform-origin: 50% 90%; }
+  .shadows .bob { filter: drop-shadow(0 4px 2px rgba(59, 36, 64, .3)); }
+  .bob svg { width: 100%; height: 100%; display: block; }
+  #bar { flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 6px; }
+  #bar > * { flex: 1 1 30%; padding: 0 6px; font-size: 15px; }
+</style>
+</head>
+<body>
+  <div id="head">
+    <span id="fps">– fps</span> &nbsp;<span id="mode"></span>
+    <div id="result">Every item bounces, and one "merges" with sparkles every half second, like a busy level. Press <b>Run 10-second test</b> and don't touch the screen.</div>
+  </div>
+  <div id="wrap"><div id="grid"></div></div>
+  <div id="bar">
+    <button id="run" type="button" class="primary">Run 10-second test</button>
+    <button id="count" type="button">60 items</button>
+    <button id="shadow" type="button">Shadows on</button>
+    <button id="copy" type="button">Copy results</button>
+    <a class="btn" href="./">Tests</a>
+  </div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+  MYF.blockZoom();
+  var TYPES = ['egg', 'spoon', 'thread'];
+  var grid = document.getElementById('grid');
+  var fpsEl = document.getElementById('fps');
+  var resultEl = document.getElementById('result');
+  var modeEl = document.getElementById('mode');
+  var items = [], count = 30, shadows = false, lastResult = '';
+  var test = null; // { start, deltas }
+
+  function build() {
+    grid.innerHTML = '';
+    items = [];
+    var cols = count === 30 ? 5 : 6, rows = count / cols;
+    grid.style.setProperty('--cols', cols);
+    var wrap = document.getElementById('wrap');
+    var c = Math.floor(Math.min((wrap.clientWidth - (cols - 1) * 4) / cols, (wrap.clientHeight - (rows - 1) * 4) / rows));
+    grid.style.setProperty('--c', Math.max(36, c) + 'px');
+    for (var i = 0; i < count; i++) {
+      var slot = document.createElement('div');
+      slot.className = 'slot';
+      var bob = document.createElement('div');
+      bob.className = 'bob';
+      bob.innerHTML = MYF.itemSVG(TYPES[i % 3], 1 + (i * 7) % 4);
+      slot.appendChild(bob);
+      grid.appendChild(slot);
+      items.push({ el: bob, phase: Math.random() * Math.PI * 2, speed: 2.2 + Math.random() * 1.6, pop: 0 });
+    }
+    grid.classList.toggle('shadows', shadows);
+    modeEl.textContent = count + ' items · shadows ' + (shadows ? 'on' : 'off');
+  }
+
+  var lastT = 0, fpsFrames = 0, fpsT = 0, lastPop = 0, rafId = 0;
+  function loop(now, manual) {
+    if (!manual) rafId = 0;
+    var t = now / 1000;
+    if (lastT) {
+      var dt = now - lastT;
+      if (test) test.deltas.push(dt);
+      fpsFrames++;
+      if (now - fpsT >= 500) { fpsEl.textContent = Math.round(fpsFrames * 1000 / (now - fpsT)) + ' fps'; fpsFrames = 0; fpsT = now; }
+    } else { fpsT = now; }
+    lastT = now;
+
+    // one item "merges" every 500 ms: a squash pop plus sparkles
+    if (now - lastPop > 500) {
+      lastPop = now;
+      var k = Math.floor(Math.random() * items.length);
+      items[k].pop = now;
+      var r = items[k].el.getBoundingClientRect();
+      MYF.sparkle(r.left + r.width / 2, r.top + r.height / 2);
+    }
+
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var s = Math.sin(t * it.speed + it.phase);
+      var sx = 1 - 0.06 * s, sy = 1 + 0.08 * s, ty = -5 * Math.abs(s), rot = 4 * Math.sin(t * 1.3 + it.phase);
+      if (it.pop) {
+        var p = (now - it.pop) / 280;
+        if (p >= 1) it.pop = 0;
+        else { var k2 = Math.sin(p * Math.PI); sx *= 1 + 0.25 * k2; sy *= 1 - 0.15 * k2; }
+      }
+      it.el.style.transform = 'translate3d(0,' + ty.toFixed(2) + 'px,0) rotate(' + rot.toFixed(2) + 'deg) scale(' + sx.toFixed(3) + ',' + sy.toFixed(3) + ')';
+    }
+
+    if (test && now - test.start >= 10000) finish();
+    if (!manual && !rafId) rafId = requestAnimationFrame(loop);
+  }
+
+  function finish() {
+    var d = test.deltas.filter(function (x) { return x > 0 && x < 1000; });
+    test = null;
+    document.getElementById('run').disabled = false;
+    if (!d.length) return;
+    var sorted = d.slice().sort(function (a, b) { return a - b; });
+    var median = sorted[Math.floor(sorted.length / 2)];
+    var hz = Math.round(1000 / median);
+    var total = d.reduce(function (a, b) { return a + b; }, 0);
+    var fps = d.length * 1000 / total;
+    var slow = d.filter(function (x) { return x > median * 1.7; }).length;
+    var p99 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.99))];
+    var smooth = fps >= Math.min(hz, 60) * 0.93 && slow / d.length < 0.03;
+    resultEl.innerHTML = (smooth ? '<span class="ok">Smooth ✓</span>' : '<span class="bad">Not smooth ✗</span>') +
+      ' · average ' + fps.toFixed(0) + ' fps (screen ~' + hz + ' Hz) · dropped frames ' + (100 * slow / d.length).toFixed(1) + '% · worst 1% ' + p99.toFixed(0) + ' ms';
+    lastResult = [
+      'Merge ya Fool · M0 test 5: smoothness · v' + MYF.VERSION,
+      MYF.deviceLine(),
+      count + ' items, shadows ' + (shadows ? 'on' : 'off') + ', 10 s',
+      'Average ' + fps.toFixed(1) + ' fps, screen about ' + hz + ' Hz, dropped frames ' + (100 * slow / d.length).toFixed(1) + '%, worst 1% of frames ' + p99.toFixed(1) + ' ms',
+      'Verdict: ' + (smooth ? 'smooth' : 'NOT smooth') + ' (target: about 60 fps, under 3% dropped)'
+    ].join('\n');
+  }
+
+  document.getElementById('run').addEventListener('click', function () {
+    this.disabled = true;
+    resultEl.textContent = 'Testing for 10 seconds… don\'t touch the screen.';
+    test = { start: performance.now(), deltas: [] };
+  });
+  document.getElementById('count').addEventListener('click', function () {
+    count = count === 30 ? 60 : 30;
+    this.textContent = count === 30 ? '60 items' : '30 items';
+    build();
+  });
+  document.getElementById('shadow').addEventListener('click', function () {
+    shadows = !shadows;
+    this.textContent = shadows ? 'Shadows off' : 'Shadows on';
+    build();
+  });
+  document.getElementById('copy').addEventListener('click', function () {
+    MYF.copyText(lastResult || 'Run the 10-second test first.', this);
+  });
+  window.addEventListener('resize', build);
+  // test hooks for automated checks on the PC (tick = run one frame by hand)
+  window.__stressTest = { result: function () { return lastResult; }, tick: function (t) { loop(t, true); }, start: function (t) { test = { start: t, deltas: [] }; } };
+
+  build();
+  rafId = requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

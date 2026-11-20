@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FFF4E0">
+<title>Drag test · Merge ya Fool</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body {
+    display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden;
+    padding: env(safe-area-inset-top) 8px env(safe-area-inset-bottom);
+  }
+  #top { flex: 0 0 17%; display: flex; align-items: center; gap: 10px; padding: 6px 2px; min-height: 0; }
+  #king { width: 64px; height: 64px; flex: 0 0 auto; }
+  #order {
+    flex: 1 1 auto; height: 78%; max-height: 86px; display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 3px solid var(--ink); border-radius: 18px; padding: 4px 10px;
+    position: relative; transition: background .15s;
+  }
+  #order::before {
+    content: ""; position: absolute; left: -11px; top: 50%; margin-top: -8px;
+    border: 8px solid transparent; border-right-color: var(--ink); border-left: 0;
+  }
+  #order.hover { background: #DDF5EC; }
+  #order .want { width: 56px; height: 56px; flex: 0 0 auto; }
+  #order .txt { font-size: 14px; line-height: 1.25; }
+  #strip {
+    flex: 0 0 auto; background: var(--card); border: 3px solid var(--ink); border-radius: 14px;
+    padding: 6px 10px; font-size: 13px; line-height: 1.35; margin-bottom: 6px;
+  }
+  #strip b { font-size: 14px; }
+  #live { margin-top: 3px; }
+  #boardWrap { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  #board {
+    display: grid; grid-template-columns: repeat(5, var(--c, 60px)); grid-auto-rows: var(--c, 60px); gap: 4px;
+    touch-action: none; position: relative;
+  }
+  .cell { background: var(--cell); border-radius: 14px; box-shadow: inset 0 -3px 0 var(--cellb); position: relative; }
+  .cell.hover { background: #FBEFD5; box-shadow: inset 0 0 0 3px var(--mint); }
+  .cell.sel { box-shadow: inset 0 0 0 4px var(--gold); }
+  .item { position: absolute; inset: 3%; }
+  .item svg, .ghost svg { width: 100%; height: 100%; display: block; }
+  .item.lifted { opacity: .3; }
+  .item.wiggle { animation: wig .45s ease-in-out infinite; }
+  .item.pop { animation: pop .28s ease-out; }
+  .item.shake { animation: shake .35s; }
+  @keyframes wig { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+  @keyframes pop { 0% { transform: scale(.55); } 60% { transform: scale(1.2, .88); } 100% { transform: scale(1); } }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  .gen .count {
+    position: absolute; right: -4px; bottom: -4px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 700;
+    border-radius: 10px; padding: 1px 6px;
+  }
+  .ghost {
+    position: fixed; left: 0; top: 0; pointer-events: none; z-index: 50; will-change: transform;
+    filter: drop-shadow(0 6px 4px rgba(59, 36, 64, .35));
+  }
+  .bubble {
+    position: fixed; z-index: 70; background: var(--card); border: 3px solid var(--ink); border-radius: 14px;
+    padding: 4px 10px; font-weight: 700; font-size: 14px; pointer-events: none; transform: translate(-50%, -100%);
+    animation: rise 1.1s ease-out forwards; white-space: nowrap;
+  }
+  @keyframes rise { 0% { opacity: 0; margin-top: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; margin-top: -24px; } }
+  #info {
+    position: fixed; left: 12px; right: 12px; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 80; display: none;
+    background: var(--card); border: 3px solid var(--ink); border-radius: 16px; padding: 10px 14px; font-size: 15px;
+    box-shadow: 0 4px 0 var(--ink);
+  }
+  #bar { flex: 0 0 auto; display: flex; gap: 6px; padding: 8px 0 6px; }
+  #bar > * { flex: 1 1 0; padding: 0 6px; font-size: 15px; }
+</style>
+</head>
+<body>
+  <div id="top">
+    <svg id="king" viewBox="0 0 100 100" aria-label="King">
+      <circle cx="50" cy="60" r="34" fill="#F6C9A8" stroke="#3B2440" stroke-width="5"/>
+      <path d="M24 34 L30 10 L42 26 L50 6 L58 26 L70 10 L76 34 Z" fill="#FFC83D" stroke="#3B2440" stroke-width="5" stroke-linejoin="round"/>
+      <circle cx="40" cy="58" r="4" fill="#3B2440"/><circle cx="60" cy="58" r="4" fill="#3B2440"/>
+      <path d="M40 74 Q50 80 60 74" fill="none" stroke="#3B2440" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+    <div id="order"><div class="want" id="want"></div><div class="txt"><b>The King wants this.</b><br>Drag it here (or tap it, then tap here). <span id="delivered"></span></div></div>
+  </div>
+
+  <div id="strip">
+    <b>Drag test.</b> Drag items onto matching ones to merge. Try fast drags, edges, two fingers, double taps, and holding an item. Tap the basket for more.
+    <div id="live">Waiting for your first drag…</div>
+  </div>
+
+  <div id="boardWrap"><div id="board" aria-label="Board"></div></div>
+
+  <div id="bar">
+    <button id="reset" type="button">Reset</button>
+    <button id="copy" type="button" class="primary">Copy results</button>
+    <a class="btn" href="./">Tests</a>
+  </div>
+
+  <div id="info"></div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+  var COLS = 5, ROWS = 6, N = COLS * ROWS, GEN = 2, MAXT = 4;
+  var TYPES = ['egg', 'spoon', 'thread'];
+  var board = document.getElementById('board');
+  var live = document.getElementById('live');
+  var orderEl = document.getElementById('order');
+  var info = document.getElementById('info');
+  var cells = [], state = [], want = null, charges = 99;
+  var selected = -1;
+
+  // ---- measurements ----
+  var M = { drags: 0, taps: 0, merges: 0, moves: 0, swaps: 0, delivered: 0, longPress: 0, cancels: 0,
+            scrolls: 0, zoomed: false, delays: [], frames: [] };
+
+  MYF.blockZoom();
+
+  function startState() {
+    state = new Array(N).fill(null);
+    state[GEN] = { gen: true };
+    var seed = [[0, 'egg', 1], [1, 'egg', 1], [5, 'spoon', 1], [6, 'spoon', 1], [8, 'thread', 1], [9, 'thread', 1],
+                [10, 'egg', 2], [12, 'egg', 2], [15, 'spoon', 2], [19, 'spoon', 2], [21, 'thread', 2], [23, 'thread', 2],
+                [25, 'egg', 3], [29, 'spoon', 1]];
+    seed.forEach(function (s) { state[s[0]] = { type: s[1], tier: s[2] }; });
+    charges = 99;
+    newWant();
+  }
+
+  function newWant() {
+    want = { type: TYPES[Math.floor(Math.random() * 3)], tier: 3 };
+    document.getElementById('want').innerHTML = MYF.itemSVG(want.type, want.tier);
+  }
+
+  function buildBoard() {
+    board.innerHTML = '';
+    cells = [];
+    for (var i = 0; i < N; i++) {
+      var c = document.createElement('div');
+      c.className = 'cell';
+      c.dataset.i = i;
+      board.appendChild(c);
+      cells.push(c);
+    }
+  }
+
+  function draw(i, anim) {
+    var c = cells[i], s = state[i];
+    c.innerHTML = '';
+    c.classList.toggle('gen', !!(s && s.gen));
+    if (!s) return;
+    var it = document.createElement('div');
+    it.className = 'item' + (anim ? ' ' + anim : '');
+    it.innerHTML = s.gen ? MYF.generatorSVG() + '<span class="count">×' + charges + '</span>' : MYF.itemSVG(s.type, s.tier);
+    c.appendChild(it);
+  }
+  function drawAll() { for (var i = 0; i < N; i++) draw(i); }
+
+  function size() {
+    var wrap = document.getElementById('boardWrap');
+    var w = wrap.clientWidth, h = wrap.clientHeight;
+    var c = Math.floor(Math.min((w - 4 * 4) / COLS, (h - 5 * 4) / ROWS));
+    board.style.setProperty('--c', Math.max(40, c) + 'px');
+  }
+
+  // ---- helpers ----
+  function center(i) { var r = cells[i].getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+  function say(i, text) {
+    var p = i === 'order' ? (function () { var r = orderEl.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 10 }; })() : center(i);
+    var b = document.createElement('div');
+    b.className = 'bubble';
+    b.textContent = text;
+    b.style.left = p.x + 'px';
+    b.style.top = (p.y - 20) + 'px';
+    document.body.appendChild(b);
+    setTimeout(function () { b.remove(); }, 1150);
+  }
+  function wiggleMatches(from, on) {
+    var s = state[from];
+    for (var i = 0; i < N; i++) {
+      var it = cells[i].firstChild;
+      if (!it || i === from) continue;
+      var t = state[i];
+      it.classList.toggle('wiggle', !!(on && t && !t.gen && t.type === s.type && t.tier === s.tier && s.tier < MAXT));
+    }
+  }
+  function vibrate(ms) { if (navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) {} } }
+
+  // ---- rules (a tiny stand-in for the real engine) ----
+  function spawn() {
+    if (charges <= 0) { say(GEN, 'Empty!'); return; }
+    var g = { r: Math.floor(GEN / COLS), c: GEN % COLS }, best = -1, bd = 1e9;
+    for (var i = 0; i < N; i++) {
+      if (state[i]) continue;
+      var d = Math.pow(Math.floor(i / COLS) - g.r, 2) + Math.pow(i % COLS - g.c, 2);
+      if (d < bd) { bd = d; best = i; }
+    }
+    if (best < 0) { cells[GEN].firstChild.classList.add('shake'); setTimeout(function () { draw(GEN); }, 360); say(GEN, 'No room!'); return; }
+    charges--;
+    state[best] = { type: TYPES[Math.floor(Math.random() * 3)], tier: 1 };
+    draw(GEN); draw(best, 'pop');
+  }
+
+  function act(from, target) {
+    // target: a cell index, or 'order'
+    var s = state[from];
+    if (!s || s.gen) return;
+    if (target === 'order') {
+      if (s.type === want.type && s.tier === want.tier) {
+        state[from] = null; draw(from); M.delivered++;
+        document.getElementById('delivered').textContent = '★ ' + M.delivered + ' delivered';
+        var r = orderEl.getBoundingClientRect(); MYF.sparkle(r.left + 40, r.top + r.height / 2);
+        say('order', 'Thank you!'); vibrate(20); newWant();
+      } else { say('order', 'Not that one!'); }
+      return;
+    }
+    var j = target;
+    if (j === from) return;
+    var t = state[j];
+    if (!t) { state[j] = s; state[from] = null; M.moves++; draw(from); draw(j); return; }
+    if (t.gen) { say(j, 'That\'s the basket!'); return; }
+    if (t.type === s.type && t.tier === s.tier) {
+      if (s.tier >= MAXT) { say(j, 'Already the best!'); return; }
+      state[j] = { type: s.type, tier: s.tier + 1 }; state[from] = null; M.merges++;
+      draw(from); draw(j, 'pop');
+      var p = center(j); MYF.sparkle(p.x, p.y); vibrate(10);
+      return;
+    }
+    state[j] = s; state[from] = t; M.swaps++; draw(from); draw(j);
+  }
+
+  // ---- input: drag, tap-tap, long-press ----
+  var press = null, ghost = null, raf = 0, lastX = 0, lastY = 0, lastEvt = 0, lastFrame = 0, hoverEl = null;
+
+  function cellAt(x, y) {
+    var el = document.elementFromPoint(x, y);
+    if (!el) return null;
+    if (el.closest('#order')) return 'order';
+    var c = el.closest('.cell');
+    return c ? +c.dataset.i : null;
+  }
+
+  function setHover(t) {
+    var el = t === 'order' ? orderEl : (t === null ? null : cells[t]);
+    if (el === hoverEl) return;
+    if (hoverEl) hoverEl.classList.remove('hover');
+    hoverEl = el;
+    if (hoverEl) hoverEl.classList.add('hover');
+  }
+
+  function clearSelection() {
+    if (selected >= 0) { cells[selected].classList.remove('sel'); wiggleMatches(selected, false); }
+    selected = -1;
+  }
+
+  function frame(now) {
+    raf = 0;
+    if (!ghost) return;
+    if (lastFrame) M.frames.push(now - lastFrame);
+    lastFrame = now;
+    var half = ghost.offsetWidth / 2;
+    ghost.style.transform = 'translate3d(' + (lastX - half) + 'px,' + (lastY - half * 1.3) + 'px,0) scale(1.1)';
+    if (lastEvt) {
+      var d = performance.now() - lastEvt;
+      if (d >= 0 && d < 1000) M.delays.push(d);
+      lastEvt = 0;
+    }
+    setHover(cellAt(lastX, lastY));
+    raf = requestAnimationFrame(frame);
+  }
+
+  function startDrag() {
+    var i = press.i;
+    press.dragging = true;
+    clearTimeout(press.lp);
+    clearSelection();
+    M.drags++;
+    var it = cells[i].firstChild;
+    it.classList.add('lifted');
+    ghost = document.createElement('div');
+    ghost.className = 'ghost';
+    var r = cells[i].getBoundingClientRect();
+    ghost.style.width = r.width + 'px';
+    ghost.style.height = r.height + 'px';
+    ghost.innerHTML = MYF.itemSVG(state[i].type, state[i].tier);
+    document.body.appendChild(ghost);
+    wiggleMatches(i, true);
+    lastFrame = 0;
+    raf = requestAnimationFrame(frame);
+  }
+
+  function endDrag(drop) {
+    var i = press.i;
+    if (raf) cancelAnimationFrame(raf);
+    raf = 0;
+    if (ghost) { ghost.remove(); ghost = null; }
+    setHover(null);
+    wiggleMatches(i, false);
+    var it = cells[i].firstChild;
+    if (it) it.classList.remove('lifted');
+    if (drop !== null && drop !== undefined) act(i, drop);
+  }
+
+  board.addEventListener('pointerdown', function (e) {
+    if (press) return; // one finger at a time
+    var c = e.target.closest('.cell');
+    if (!c) return;
+    e.preventDefault();
+    var i = +c.dataset.i;
+    press = { id: e.pointerId, i: i, x0: e.clientX, y0: e.clientY, dragging: false, long: false, lp: 0 };
+    lastX = e.clientX; lastY = e.clientY;
+    if (state[i] && !state[i].gen) {
+      press.lp = setTimeout(function () {
+        if (!press || press.dragging) return;
+        press.long = true; M.longPress++;
+        var s = state[i], n = MYF.NAMES[s.type];
+        info.innerHTML = '<b>' + n[s.tier - 1] + '</b> (tier ' + s.tier + ')<br>' +
+          (s.tier < MAXT ? 'Two of these make: <b>' + n[s.tier] + '</b>' : 'The best of its family.') +
+          '<br><small>Long-press works. Tap anywhere to close.</small>';
+        info.style.display = 'block';
+        vibrate(15);
+      }, 450);
+    }
+  });
+
+  window.addEventListener('pointermove', function (e) {
+    if (!press || e.pointerId !== press.id) return;
+    lastX = e.clientX; lastY = e.clientY; lastEvt = e.timeStamp;
+    if (!press.dragging && !press.long && state[press.i] && !state[press.i].gen) {
+      if (Math.hypot(e.clientX - press.x0, e.clientY - press.y0) > 8) startDrag();
+    }
+  }, { passive: true });
+
+  window.addEventListener('pointerup', function (e) {
+    if (!press || e.pointerId !== press.id) return;
+    clearTimeout(press.lp);
+    var i = press.i;
+    if (press.dragging) {
+      endDrag(cellAt(e.clientX, e.clientY));
+    } else if (!press.long) {
+      M.taps++;
+      if (state[i] && state[i].gen) { clearSelection(); spawn(); }
+      else if (selected >= 0) {
+        var from = selected; clearSelection();
+        if (from !== i) act(from, i);
+      } else if (state[i]) {
+        selected = i; cells[i].classList.add('sel'); wiggleMatches(i, true);
+      }
+    }
+    press = null;
+    report();
+  });
+
+  window.addEventListener('pointercancel', function (e) {
+    if (!press || e.pointerId !== press.id) return;
+    clearTimeout(press.lp);
+    M.cancels++;
+    if (press.dragging) endDrag(null);
+    press = null;
+    report();
+  });
+
+  orderEl.addEventListener('pointerup', function () {
+    if (press) return;
+    if (selected >= 0) { var from = selected; clearSelection(); act(from, 'order'); report(); }
+  });
+
+  // any new touch closes the info card (a new long-press opens it again)
+  document.addEventListener('pointerdown', function () { info.style.display = 'none'; }, true);
+
+  // ---- scroll and zoom watchers ----
+  window.addEventListener('scroll', function () { if (window.scrollY !== 0 || window.scrollX !== 0) { M.scrolls++; report(); } }, { passive: true });
+  if (window.visualViewport) {
+    visualViewport.addEventListener('resize', function () { if (Math.abs(visualViewport.scale - 1) > 0.01) { M.zoomed = true; report(); } });
+  }
+  window.addEventListener('resize', function () { size(); });
+
+  // ---- report ----
+  function stats() {
+    var d = M.delays.slice().sort(function (a, b) { return a - b; });
+    var avg = d.length ? d.reduce(function (a, b) { return a + b; }, 0) / d.length : 0;
+    var p95 = d.length ? d[Math.min(d.length - 1, Math.floor(d.length * 0.95))] : 0;
+    var f = M.frames.filter(function (x) { return x > 0 && x < 500; });
+    var fps = f.length ? 1000 / (f.reduce(function (a, b) { return a + b; }, 0) / f.length) : 0;
+    return { avg: avg, p95: p95, max: d.length ? d[d.length - 1] : 0, fps: fps, n: d.length };
+  }
+  function mark(ok) { return ok ? '<span class="ok">✓</span>' : '<span class="bad">✗</span>'; }
+  function report() {
+    var s = stats();
+    live.innerHTML = 'Drags ' + M.drags + ' · merges ' + M.merges + ' · delay ' + (s.n ? s.avg.toFixed(0) + ' ms ' + mark(s.p95 < 50) : '–') +
+      ' · ' + (s.n ? s.fps.toFixed(0) + ' fps' : '') +
+      '<br>Scroll ' + mark(M.scrolls === 0) + ' · Zoom ' + mark(!M.zoomed) + ' · Browser took over ' + M.cancels + ' ' + mark(M.cancels === 0);
+  }
+  function resultText() {
+    var s = stats();
+    return [
+      'Merge ya Fool · M0 test 1: drag · v' + MYF.VERSION,
+      MYF.deviceLine(),
+      'Drags ' + M.drags + ', taps ' + M.taps + ', merges ' + M.merges + ', moves ' + M.moves + ', swaps ' + M.swaps +
+        ', delivered ' + M.delivered + ', long-presses ' + M.longPress,
+      'Finger-to-screen delay: average ' + s.avg.toFixed(1) + ' ms, 95% under ' + s.p95.toFixed(1) + ' ms, worst ' + s.max.toFixed(1) + ' ms (target: under 50)',
+      'Frame rate while dragging: ' + s.fps.toFixed(0) + ' fps',
+      'Browser took over a drag: ' + M.cancels + ' times (target 0)',
+      'Page scrolled: ' + M.scrolls + ' times (target 0) · Zoomed: ' + (M.zoomed ? 'yes' : 'no') + ' (target no)'
+    ].join('\n');
+  }
+
+  document.getElementById('copy').addEventListener('click', function () { MYF.copyText(resultText(), this); });
+  document.getElementById('reset').addEventListener('click', function () { clearSelection(); startState(); drawAll(); });
+
+  // test hook for automated checks on the PC
+  window.__dragTest = { state: function () { return state; }, M: M, resultText: resultText };
+
+  buildBoard(); startState(); size(); drawAll(); report();
+})();
+</script>
+</body>
+</html>

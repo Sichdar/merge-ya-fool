@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFF4E0">
+<title>Phone tests · Merge ya Fool</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px); max-width: 520px; margin: 0 auto; -webkit-user-select: text; user-select: text; }
+  h1 { font-size: 24px; margin: 4px 0 4px; }
+  p { line-height: 1.45; margin: 8px 0; }
+  .card { background: var(--card); border: 3px solid var(--ink); border-radius: 16px; padding: 12px 14px; margin: 12px 0; box-shadow: 0 4px 0 var(--ink); }
+  .card h2 { font-size: 18px; margin: 0 0 4px; }
+  .card .btn { width: 100%; margin-top: 8px; }
+  ol { padding-left: 20px; margin: 6px 0; line-height: 1.45; }
+  small { color: var(--soft); }
+</style>
+</head>
+<body>
+  <h1>Phone tests</h1>
+  <p>Three quick checks before the game is built. Each one shows its numbers and has a <b>Copy results</b> button: paste the text in a message.</p>
+
+  <div class="card">
+    <h2>1 · Drag test</h2>
+    <p>Drag items around, merge pairs, tap the basket. Try fast drags, the screen edges, two fingers and double taps. <b>The page must never scroll or zoom.</b></p>
+    <a class="btn primary" href="drag.html">Open the drag test</a>
+  </div>
+
+  <div class="card">
+    <h2>2 · Smoothness test</h2>
+    <p>30 bouncing items with sparkles. Press <b>Run 10-second test</b> and don't touch the screen. Then try 60 items and shadows on.</p>
+    <a class="btn" href="stress.html">Open the smoothness test</a>
+  </div>
+
+  <div class="card">
+    <h2>3 · This page loaded</h2>
+    <p id="paths">Checking that files load from this folder…</p>
+    <p><small id="device"></small></p>
+  </div>
+
+  <p><a href="../">← Back</a></p>
+
+<script src="shared.js"></script>
+<script>
+  document.getElementById('device').textContent = MYF.deviceLine();
+  fetch('version.json', { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (v) { document.getElementById('paths').innerHTML = '<span class="ok">✓ Files load fine</span> (test build ' + v.version + ').'; })
+    .catch(function (e) { document.getElementById('paths').innerHTML = '<span class="bad">✗ A file didn\'t load</span> (' + e.message + ').'; });
+</script>
+</body>
+</html>

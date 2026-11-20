@@ -1,0 +1,7 @@
+# Only the game itself goes online. Everything else (project log, design, backups, local server, notes) stays on this PC.
+/*
+!/.gitignore
+!/.nojekyll
+!/LICENSE
+!/index.html
+!/phone-tests/

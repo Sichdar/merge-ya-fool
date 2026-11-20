@@ -1,0 +1,33 @@
+:root {
+  --bg: #FFF4E0; --cell: #F3E3C3; --cellb: #E2CDA4; --ink: #3B2440;
+  --gold: #FFC83D; --mint: #5CC9A7; --card: #FFFFFF; --soft: #7A6380;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 16px;
+  overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  -webkit-text-size-adjust: 100%;
+}
+body { touch-action: manipulation; }
+a { color: var(--ink); }
+button, .btn {
+  font: inherit; font-weight: 700; min-height: 48px; padding: 0 14px; border-radius: 14px;
+  border: 3px solid var(--ink); background: var(--card); color: var(--ink);
+  touch-action: manipulation; cursor: pointer; text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  box-shadow: 0 3px 0 var(--ink);
+}
+button:active, .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+button.primary { background: var(--gold); }
+.ok { color: #1E7F5F; font-weight: 700; }
+.bad { color: #A0446B; font-weight: 700; }
+.spark {
+  position: fixed; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
+  background: var(--gold); border: 2px solid var(--ink); pointer-events: none; z-index: 60;
+  animation: spark .5s ease-out forwards;
+}
+@keyframes spark {
+  from { transform: translate(0, 0) scale(1); opacity: 1; }
+  to { transform: translate(var(--dx), var(--dy)) scale(.3); opacity: 0; }
+}
