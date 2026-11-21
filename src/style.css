@@ -175,6 +175,31 @@ button[disabled] { opacity: .45; }
 .stuckCard { display: flex; gap: 10px; align-items: center; text-align: left; }
 .stuckCard .who { width: 70px; height: 70px; flex: 0 0 auto; }
 
+/* --- meme pass 2 (R3) --- */
+.say.meme { display: flex; align-items: center; gap: 6px; background: #FFFBEA; }
+.say .ic { width: 26px; height: 22px; display: inline-block; flex: 0 0 auto; }
+.say .ic svg { width: 100%; height: 100%; }
+.cameo { position: fixed; left: 6px; bottom: calc(env(safe-area-inset-bottom) + 64px); width: 92px; height: 92px; z-index: 75; pointer-events: none; animation: cameoIn .35s ease-out; }
+.cameo svg { width: 100%; height: 100%; filter: drop-shadow(0 3px 2px rgba(59, 36, 64, .35)); }
+.cameo.out { animation: cameoOut .3s ease-in forwards; }
+@keyframes cameoIn { from { transform: translateY(70px) rotate(-12deg); opacity: 0; } 70% { transform: translateY(-6px) rotate(3deg); } }
+@keyframes cameoOut { to { transform: translateY(70px); opacity: 0; } }
+.evr { display: flex; gap: 10px; margin: 4px 0 2px; }
+.evr figure { flex: 1 1 0; margin: 0; }
+.evr svg { width: 100%; height: auto; }
+.evr figcaption { font-weight: 800; font-size: 14px; margin-top: 4px; }
+.brains { display: flex; justify-content: center; align-items: flex-end; gap: 10px; margin: 8px 0 2px; }
+.brains span { display: inline-block; animation: starIn .45s ease-out backwards; }
+.brains .b1 { width: 52px; height: 52px; } .brains .b2 { width: 66px; height: 66px; } .brains .b3 { width: 80px; height: 80px; }
+.brains svg { width: 100%; height: 100%; }
+.brainCap { font-weight: 800; font-size: 16px; min-height: 20px; }
+.card .st { color: var(--gold); -webkit-text-stroke: 1px var(--ink); letter-spacing: 1px; }
+.card .st .off { color: #EFE4CF; }
+.smug { width: 76px; height: 76px; margin: -52px auto 0; }
+.badges { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 6px 0; }
+.badges span { background: var(--mint); border: 2px solid var(--ink); border-radius: 10px; padding: 2px 8px; font-weight: 800; font-size: 13px; }
+.nobody { text-align: left; background: var(--bg); border: 2px dashed var(--soft); border-radius: 12px; padding: 6px 10px; margin: 8px 0 0; font-size: 14px; line-height: 1.35; }
+
 /* --- level list --- */
 .list { max-width: 400px; }
 .list h1 { margin: 0; font-size: 30px; }

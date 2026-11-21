@@ -18,6 +18,7 @@
       guide: true, comboGlow: ['chick', 'ladle'],
       story: [
         { on: 'start', panel: 'c1-01-p1' },
+        { on: 'made:hatchling', panel: 'c1-01-meme' },
         { on: 'made:ladle', panel: 'c1-01-p2' },
         { on: 'made:braveChick', panel: 'c1-01-p3' },
         { on: 'delivered:braveChick', panel: 'c1-01-p4' },
@@ -34,6 +35,7 @@
       orders: [{ who: 'sirChick', wants: 'cosyEgg' }],
       story: [
         { on: 'start', panel: 'c1-02-p1' },
+        { on: 'made:egg', panel: 'c1-02-meme' },
         { on: 'made:sock', panel: 'c1-02-p2' },
         { on: 'made:socks', panel: 'c1-02-p3' },
         { on: 'made:cosyEgg', panel: 'c1-02-p4' },
@@ -55,6 +57,7 @@
       orders: [{ who: 'king', wants: 'goldenLadle' }, { who: 'sirChick', wants: 'chick' }],
       story: [
         { on: 'start', panel: 'c1-03-p1' },
+        { on: 'made:bigSpoon', panel: 'c1-03-meme' },
         { on: 'made:goldenLadle', panel: 'c1-03-p2' },
         { on: 'delivered:chick', panel: 'c1-03-p3' },
         { on: 'won', panel: 'c1-03-p4' }

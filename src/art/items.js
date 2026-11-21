@@ -117,8 +117,26 @@
   ART.goldenLadle = function () {
     return ladleShape('#FFC83D', '#FFE9A6',
       '<path d="M37 69 h8 M55 69 h8" ' + THIN + '/>' + dot(41, 72, 2.6) + dot(59, 72, 2.6) +
-      '<path d="M44 80 q8 2 13 -4" fill="none" ' + THIN + '/>' + shine(28, 62, 3, 6)) +
+      '<path d="M44 80 q8 2 13 -4" fill="none" ' + THIN + '/>' + shine(28, 62, 3, 6) +
+      // its shine is a little stonks arrow (R3)
+      '<path d="M24 86 L30 79 L34 82 L40 74" fill="none" stroke="#2FA84F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M36 74 H40 V78" fill="none" stroke="#2FA84F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>') +
       crown(84, 8, 0.75) + sparkle(14, 30, 1) + sparkle(90, 44, 0.7);
+  };
+
+  // Meme gags (R3): extra bits shown on the big long-press card only, where there is room to read them
+  function tag(x, y, w, text, rot) {
+    return '<g transform="rotate(' + (rot || 0) + ' ' + x + ' ' + y + ')"><rect x="' + (x - w / 2) + '" y="' + (y - 7) + '" width="' + w + '" height="13" rx="4" fill="#fff" ' + THIN + '/>' +
+      '<text x="' + x + '" y="' + (y + 3) + '" font-size="9" font-weight="900" fill="' + INK + '" text-anchor="middle" font-family="system-ui,sans-serif">' + text + '</text></g>';
+  }
+  function think(x, y, w, text) {
+    return '<circle cx="' + (x - w / 2 + 2) + '" cy="' + (y + 12) + '" r="2" fill="#fff" ' + THIN + '/>' +
+      '<rect x="' + (x - w / 2) + '" y="' + (y - 8) + '" width="' + w + '" height="15" rx="7" fill="#fff" ' + THIN + '/>' +
+      '<text x="' + x + '" y="' + (y + 3) + '" font-size="9" font-weight="900" fill="' + INK + '" text-anchor="middle" font-family="system-ui,sans-serif">' + text + '</text>';
+  }
+  var GAG = {
+    hatchling: function () { return tag(30, 82, 40, 'I’m baby', -8); },
+    chick: function () { return think(26, 12, 46, 'plot twist?'); },
+    sock: function () { return think(24, 10, 30, 'sus?'); }
   };
 
   // --- Thread family ---
@@ -222,7 +240,7 @@
     if (!info || !draw) return '';
     var tier = info.tier, s = info.combo ? 0.98 : (SCALE[tier] || 0.96);
     if (info.top && !info.combo) s = 1;
-    var body = '<g transform="translate(50 52) scale(' + s + ') translate(-50 -52)">' + draw() + '</g>';
+    var body = '<g transform="translate(50 52) scale(' + s + ') translate(-50 -52)">' + draw() + '</g>' + (opts.gag && GAG[id] ? GAG[id]() : '');
     if (opts.raw) return body;
     var dots = '';
     if (opts.dots !== false) {

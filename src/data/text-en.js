@@ -48,13 +48,33 @@
       'c1-03-p1': 'Bobo asked for ONE spoon. The drawer heard "ALL spoons".',
       'c1-03-p2': 'The Soup-reme Ladle! The King weeps with joy.',
       'c1-03-p3': 'Sir Chick gets a squire. The squire gets popcorn.',
-      'c1-03-p4': 'The drawer is still clattering. Nobody opens it again.'
+      'c1-03-p4': 'The drawer is still clattering. Nobody opens it again.',
+      // meme-format panels (R3)
+      'c1-01-meme': 'POV: you are the crown, and the soup is HOT.',
+      'c1-02-meme': 'Cold egg starter pack. Every item is sad.',
+      'c1-03-meme': 'Bobo ranks the spoons. Every spoon is S tier.'
+    },
+    // Meme pass 2 (R3): nods to formats and catchphrases, all pictures our own (design/06c)
+    meme: {
+      stonks: 'STONKS', bigBrain: 'Combo! Big brain time', noCap: 'Delivered. No cap.', ctrlZ: 'Ctrl+Z moment', vibe: 'Vibe check!',
+      villain: 'This is my villain arc.',
+      brains: ['You did it. Somehow.', 'Thinking ahead. Ish.', 'Ascended. The soup bows to you.'],
+      brainNames: ['Small brain', 'Glowing brain', 'Galaxy brain'],
+      nobody: 'Nobody:',
+      nobodyLines: {
+        'c1-01': ['Bobo:', '*juggles the crown into the soup*'],
+        'c1-02': ['The egg:', '*refuses to hatch without socks*'],
+        'c1-03': ['The drawer:', 'CLANG CLANG CLANG']
+      },
+      plan: 'My plan', reality: 'My plan (reality)',
+      taskFailed: 'Task failed successfully.',
+      speedrun: 'Speedrun any%', undoEnjoyer: 'Undo enjoyer'
     },
     ui: {
       moves: 'Moves', par: 'par', undo: 'Oops', hint: 'Big Brain', menu: 'Menu', shake: 'Wobble',
       tapToStart: 'Tap to start', resume: 'Back to the mess', restart: 'Start again', levels: 'All days',
       sure: 'Start again? Your moves go back to 0.', yes: 'Yes, start again', no: 'No',
-      noRoom: 'No room!', noCharges: 'All out!', wrongOrder: 'Not that!', blocked: 'Nope!',
+      noRoom: 'No room. Like, literally.', noCharges: 'It’s giving… empty', wrongOrder: 'Bruh.', blocked: 'Nope!',
       stuck: 'Oopsie! Want a Wobble?', stuckShake: 'Wobble the room (+3 moves)', stuckUndo: 'Oops (undo)', close: 'Close',
       whatIf: 'What if…?', hintNone: 'Hmm… try Oops or Start again.', skillIssue: 'Skill issue?',
       wonTitle: 'Day done!', nextDay: 'Next day', replay: 'Play again', best: 'best',

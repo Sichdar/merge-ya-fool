@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var MYF = window.MYF, R = MYF.Rules, T = MYF.TEXT, A = MYF.Art, Sfx = MYF.Sfx, Store = MYF.Store;
-  var VERSION = '0.1.0';
+  var VERSION = '0.2.0';
   MYF.VERSION = VERSION;
   var LEVELS = MYF.DATA.levels;
   function $(id) { return document.getElementById(id); }
@@ -17,6 +17,8 @@
   var game = null, level = null, levelIdx = 0;
   var sel = -1, down = null, drag = null, layer = null, hintMark = null, hintTimer = 0, noRoomCount = 0;
   var whatIf = null, testBox = null;
+  // Meme pass (R3): short-lived faces on the order characters, side-eye while dragging, quick-merge streak, first-undo joke
+  var M = T.meme, faceUntil = {}, sideK = -1, mergeTimes = [], lastBigBrain = 0, undoSaid = false;
 
   // ---------------- helpers ----------------
   function readTestFlag() {
@@ -34,10 +36,11 @@
   function fmtTime(ms) { var s = Math.round(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
   function itemName(id) { return (T.items[id] && T.items[id].name) || id; }
 
-  function say(node, text, ms) {
+  function say(node, text, ms, icon) {
     if (!node) return null;
     var c = center(node), b = document.createElement('div');
-    b.className = 'say'; b.textContent = text;
+    b.className = 'say' + (icon ? ' meme' : '');
+    if (icon) b.innerHTML = '<span class="ic">' + icon + '</span>' + esc(text); else b.textContent = text;
     b.style.left = Math.max(70, Math.min(window.innerWidth - 70, c.x)) + 'px';
     b.style.top = (c.r.top - 4) + 'px';
     document.body.appendChild(b);
@@ -54,6 +57,13 @@
       document.body.appendChild(s);
       setTimeout(s.remove.bind(s), 520);
     }
+  }
+  // A character pops up from the bottom-left corner for a moment (Bobo's "mind blown" on story combos)
+  function cameo(who, expr, ms) {
+    var d = document.createElement('div');
+    d.className = 'cameo'; d.innerHTML = A.charSVG(who, expr);
+    document.body.appendChild(d);
+    setTimeout(function () { d.classList.add('out'); setTimeout(d.remove.bind(d), 300); }, ms || 1600);
   }
   function vibrate(ms) {
     try {
@@ -122,10 +132,36 @@
   function renderOrders() {
     var st = game.state;
     el.orders.innerHTML = st.orders.map(function (o, k) {
-      var mood = o.done || st.won ? 'happy' : 'worried';
-      return '<div class="order' + (o.done ? ' done' : '') + '"><div class="who" title="' + esc(T.who[o.who] || '') + '">' + A.charSVG(o.who, mood) + '</div>' +
+      var mood = moodFor(o, k);
+      return '<div class="order' + (o.done ? ' done' : '') + '"><div class="who" data-mood="' + mood + '" title="' + esc(T.who[o.who] || '') + '">' + A.charSVG(o.who, mood) + '</div>' +
         '<div class="bub" data-order="' + k + '" aria-label="' + esc(T.who[o.who] + ' wants ' + itemName(o.wants)) + '">' + A.itemSVG(o.wants, { dots: false }) + '</div></div>';
     }).join('');
+  }
+  // Which face each order character shows right now (R3 faces: confused, side-eye, screaming internally, loading)
+  function moodFor(o, k) {
+    var st = game.state;
+    if (o.done || st.won) return 'happy';
+    var f = faceUntil[k];
+    if (f && f.until > Date.now()) return f.expr;
+    if (sideK === k) return 'sideEye';
+    var free = st.cells.filter(function (c) { return !c; }).length;
+    if (free <= 2) return 'internal';
+    if (game.moves() === 0 && game.stats.ms >= 10000) return 'loading';
+    return 'worried';
+  }
+  // Swap only the faces that changed, so a drag hovering a bubble isn't disturbed
+  function refreshFaces() {
+    if (!game) return;
+    var whos = el.orders.querySelectorAll('.who');
+    game.state.orders.forEach(function (o, k) {
+      var w = whos[k], mood = moodFor(o, k);
+      if (w && w.dataset.mood !== mood) { w.dataset.mood = mood; w.innerHTML = A.charSVG(o.who, mood); }
+    });
+  }
+  function showFace(k, expr, ms) {
+    faceUntil[k] = { expr: expr, until: Date.now() + (ms || 2000) };
+    refreshFaces();
+    setTimeout(refreshFaces, (ms || 2000) + 50);
   }
   function renderScore(bump) {
     var m = game.moves(), p = level.par, s = R.starsFor(m, p);
@@ -158,7 +194,12 @@
         showWhatIf = true;
         if (whatIf) whatIf.remove();
         whatIf = null;
-        requestAnimationFrame(function () { if (whatIf) whatIf.remove(); whatIf = say(cellEl(a), T.ui.whatIf, 0); });
+        requestAnimationFrame(function () {
+          if (whatIf) whatIf.remove();
+          whatIf = null;
+          // the combo may have been made before this frame came round
+          if (!game.state.won && !game.state.made[result.id] && findItem(level.comboGlow[0]) >= 0) whatIf = say(cellEl(findItem(level.comboGlow[0])), T.ui.whatIf, 0);
+        });
       }
     }
     if (!showWhatIf && whatIf) { whatIf.remove(); whatIf = null; }
@@ -183,7 +224,7 @@
     clearHint();
     level = LEVELS[idx]; levelIdx = idx;
     game = new R.Game(level, resume && resume.level === level.id ? resume : null);
-    sel = -1; noRoomCount = 0;
+    sel = -1; noRoomCount = 0; faceUntil = {}; sideK = -1; mergeTimes = []; undoSaid = false;
     el.dayTitle.textContent = T.ui.day + ' ' + (idx + 1) + ' · ' + T.levels[level.id];
     layout(); render(); renderOrders(); renderScore(); renderStrip();
     var ev = game.start();
@@ -218,17 +259,25 @@
     events.forEach(function (e) {
       switch (e.t) {
         case 'spawned': fly(e.at, e.from, 'anim-spawn'); restartAnim(cellEl(e.from) && cellEl(e.from).firstChild, 'anim-tap'); Sfx.play('spawn'); break;
-        case 'merged': restartAnim(item(e.to), 'anim-pop'); sparks(cellEl(e.to), 6); Sfx.play('merge', e.tier); vibrate(12); break;
+        case 'merged': {
+          restartAnim(item(e.to), 'anim-pop'); sparks(cellEl(e.to), 6); Sfx.play('merge', e.tier); vibrate(12);
+          var now = Date.now();
+          mergeTimes = mergeTimes.filter(function (t) { return now - t < 2000; }).concat(now);
+          if (R.ITEMS[e.id] && R.ITEMS[e.id].top) say(cellEl(e.to), M.stonks, 1500, A.ICONS.stonks);
+          else if (mergeTimes.length >= 3 && now - lastBigBrain > 5000) { lastBigBrain = now; mergeTimes = []; say(cellEl(e.to), M.bigBrain, 1400, A.ICONS.brain); }
+          break;
+        }
         case 'combo':
           restartAnim(item(e.to), 'anim-combo'); sparks(cellEl(e.to), 16); Sfx.play('combo'); vibrate([15, 40, 15]);
-          say(cellEl(e.to), T.items[e.id].pun + '!', 1600); break;
+          say(cellEl(e.to), T.items[e.id].pun + '!', 1600);
+          cameo('bobo', 'mindBlown', 1700); break;
         case 'moved': fly(e.to, e.from, 'anim-slide'); Sfx.play('move'); break;
         case 'swapped': fly(e.to, e.from, 'anim-slide'); fly(e.from, e.to, 'anim-slide'); Sfx.play('swap'); break;
         case 'delivered': {
           var b = el.orders.querySelector('[data-order="' + e.order + '"]');
-          sparks(b, 14); restartAnim(b, 'anim-pop'); Sfx.play('deliver'); break;
+          sparks(b, 14); restartAnim(b, 'anim-pop'); Sfx.play('deliver'); say(b, M.noCap, 1300, A.ICONS.cap); break;
         }
-        case 'shaken': restartAnim(el.board, 'anim-nope'); Sfx.play('boing'); break;
+        case 'shaken': restartAnim(el.board, 'anim-nope'); Sfx.play('boing'); say(el.board, M.vibe, 1300); break;
         case 'panel': renderStrip(true); Sfx.play('page'); break;
         case 'won': setTimeout(onWon, 650); break;
         case 'stuck': setTimeout(showStuck, 350); break;
@@ -251,11 +300,15 @@
         noRoomCount++;
         restartAnim(node && node.firstChild, 'anim-nope'); Sfx.play('boing');
         say(node, noRoomCount === 2 ? T.ui.skillIssue : T.ui.noRoom); break;
-      case 'noCharges': restartAnim(node && node.firstChild, 'anim-nope'); Sfx.play('boing'); say(node, T.ui.noCharges); break;
+      case 'noCharges': {
+        restartAnim(node && node.firstChild, 'anim-nope'); Sfx.play('boing');
+        var g = e.at != null && game.state.cells[e.at];
+        say(node, g && g.gen === 'eggBasket' ? M.villain : T.ui.noCharges, 1500); break;
+      }
       case 'top': restartAnim(node && node.firstChild, 'anim-nope'); Sfx.play('boing'); say(node, (T.items[e.id] && T.items[e.id].top) || T.ui.topTier, 1600); break;
       case 'wrongOrder': {
         var b = el.orders.querySelector('[data-order="' + e.order + '"]');
-        restartAnim(b, 'anim-nope'); Sfx.play('uhoh'); say(b, T.ui.wrongOrder); break;
+        restartAnim(b, 'anim-nope'); Sfx.play('uhoh'); say(b, T.ui.wrongOrder); showFace(e.order, 'confused', 2000); break;
       }
       case 'blocked': restartAnim(node && node.firstChild, 'anim-nope'); Sfx.play('boing'); break;
     }
@@ -266,6 +319,7 @@
     clearHint(); sel = -1;
     render(); renderOrders(); renderScore(true); persist();
     Sfx.play('move');
+    if (!undoSaid) { undoSaid = true; say(el.undo, M.ctrlZ, 1400); }
     updateGuide();
   }
   function hint() {
@@ -286,7 +340,7 @@
   }
   function restart() {
     game.restart();
-    clearHint(); sel = -1; noRoomCount = 0;
+    clearHint(); sel = -1; noRoomCount = 0; faceUntil = {}; sideK = -1; mergeTimes = [];
     render(); renderOrders(); renderScore(); renderStrip();
     persist();
     updateGuide();
@@ -416,6 +470,13 @@
     drag.ghost.style.transform = 'translate(' + (e.clientX - drag.w / 2) + 'px,' + (e.clientY - drag.h * 0.8) + 'px)';
     var t = targetAt(e.clientX, e.clientY - drag.h * 0.3);
     var node = t && t.i !== drag.from ? t.node : null;
+    // Side-eye (R3): the character stares when you bring the wrong thing
+    var side = -1;
+    if (t && t.order != null) {
+      var o = game.state.orders[t.order], held = game.state.cells[drag.from];
+      if (o && !o.done && held && held.id !== o.wants) side = t.order;
+    }
+    if (side !== sideK) { sideK = side; refreshFaces(); }
     if (drag.hover !== node) {
       if (drag.hover) drag.hover.classList.remove('hover', 'bad');
       if (node) {
@@ -434,6 +495,7 @@
     if (drag.hover) drag.hover.classList.remove('hover', 'bad');
     var from = drag.from;
     drag = null;
+    if (sideK >= 0) { sideK = -1; refreshFaces(); }
     if (!t || t.i === from) { render(); updateGuide(); return; }
     if (t.order != null) doAction({ t: 'deliver', from: from, order: t.order });
     else doAction({ t: 'drop', from: from, to: t.i });
@@ -490,7 +552,7 @@
     if (c.k === 'gen') {
       var g = T.gens[c.gen];
       openLayer('<div class="card"><div class="info"><div class="pic">' + A.genSVG(c.gen) + '</div><div><div class="pun">' + esc(g.pun) + '</div><div class="plain">' + esc(g.name) +
-        '</div><p>' + esc(g.line) + '</p><div class="small">×' + c.charges + ' ' + T.ui.genInfo + '</div></div></div></div>', { tapClose: true });
+        '</div><p>' + esc(c.charges <= 0 && c.gen === 'eggBasket' ? M.villain : g.line) + '</p><div class="small">×' + c.charges + ' ' + T.ui.genInfo + '</div></div></div></div>', { tapClose: true });
       return;
     }
     showInfo(c.id);
@@ -502,14 +564,16 @@
     if (info.next) {
       next = '<div class="next">' + T.ui.mergesInto + ': ' + (made[info.next] ? '<span class="mini">' + A.itemSVG(info.next, { dots: false }) + '</span> ' + esc(itemName(info.next)) : T.ui.unknown) + '</div>';
     } else if (!info.combo) next = '<div class="next">' + T.ui.topTier + '</div>';
-    openLayer('<div class="card"><div class="info"><div class="pic">' + A.itemSVG(id) + '</div><div><div class="pun">' + esc(known ? t.pun : T.ui.unknown) + '</div><div class="plain">' + esc(t.name) +
+    openLayer('<div class="card"><div class="info"><div class="pic">' + A.itemSVG(id, { gag: known }) + '</div><div><div class="pun">' + esc(known ? t.pun : T.ui.unknown) + '</div><div class="plain">' + esc(t.name) +
       '</div><p>' + esc(known ? t.line : '') + '</p>' + next + '</div></div></div>', { tapClose: true });
   }
 
   function showStuck() {
     if (!game || game.state.won || layer || !game.isStuck()) return;
     Sfx.play('uhoh');
-    var l = openLayer('<div class="card"><div class="stuckCard"><div class="who">' + A.charSVG('bobo', 'worried') + '</div><h2>' + T.ui.stuck + '</h2></div>' +
+    // Expectation vs reality (R3)
+    var l = openLayer('<div class="card"><h2>' + T.ui.stuck + '</h2><div class="evr"><figure>' + A.planSVG(false) + '<figcaption>' + M.plan + '</figcaption></figure>' +
+      '<figure>' + A.planSVG(true) + '<figcaption>' + M.reality + '</figcaption></figure></div>' +
       '<div class="btns"><button class="primary shake">' + T.ui.stuckShake + '</button><div class="row"><button class="undo">' + T.ui.stuckUndo + '</button><button class="close">' + T.ui.close + '</button></div></div></div>', { outsideClose: true });
     on(l, '.shake', function () { closeLayer(); doAction({ t: 'shake' }); });
     on(l, '.undo', function () { closeLayer(); undo(); });
@@ -524,7 +588,7 @@
     on(l, '.resume', closeLayer);
     on(l, '.restart', function () {
       if (game.moves() >= 5 && !game.state.won) {
-        var l2 = openLayer('<div class="card"><p><b>' + T.ui.sure + '</b></p><div class="btns"><button class="primary yes">' + T.ui.yes + '</button><button class="no">' + T.ui.no + '</button></div></div>', { outsideClose: true });
+        var l2 = openLayer('<div class="card"><p class="small">' + M.taskFailed + '</p><p><b>' + T.ui.sure + '</b></p><div class="btns"><button class="primary yes">' + T.ui.yes + '</button><button class="no">' + T.ui.no + '</button></div></div>', { outsideClose: true });
         on(l2, '.yes', function () { closeLayer(); restart(); });
         on(l2, '.no', closeLayer);
       } else { closeLayer(); restart(); }
@@ -563,9 +627,19 @@
   function showResults() {
     var s = game.stars(), m = game.moves(), rec = save.levels[level.id] || {};
     var hasNext = levelIdx + 1 < LEVELS.length;
-    var l = openLayer('<div class="card"><h2>' + T.ui.wonTitle + '</h2><div class="small">' + esc(T.ui.day + ' ' + (levelIdx + 1) + ': ' + T.levels[level.id]) + '</div>' +
-      '<div class="stars">' + [0, 1, 2].map(function (k) { return '<span class="' + (k < s ? '' : 'off') + '" style="animation-delay:' + (0.25 + k * 0.3) + 's">★</span>'; }).join('') + '</div>' +
-      '<p><b>' + m + ' ' + T.ui.moves.toLowerCase() + '</b> · ' + T.ui.fromPar + ' ' + level.par + (rec.best && rec.best < m ? ' · ' + T.ui.best + ' ' + rec.best : '') + '</p>' +
+    // Stars as a brain ladder (R3): small brain, glowing brain, galaxy brain
+    var brains = '<div class="brains" aria-label="' + s + ' of 3 stars">' + [1, 2, 3].map(function (k) {
+      return '<span class="b' + k + (k <= s ? '' : ' off') + '" style="animation-delay:' + (0.2 + k * 0.3) + 's" title="' + M.brainNames[k - 1] + '">' + A.brainSVG(k, k <= s) + '</span>';
+    }).join('') + '</div><div class="brainCap">' + (s ? M.brains[s - 1] : '') + '</div>';
+    var badges = [];
+    if (m <= level.par - 5) badges.push(M.speedrun);
+    if (game.stats.undos >= 10) badges.push(M.undoEnjoyer);
+    var nb = M.nobodyLines[level.id];
+    var l = openLayer('<div class="card">' + (s === 3 ? '<div class="smug">' + A.charSVG('bobo', 'smug') + '</div>' : '') +
+      '<h2>' + T.ui.wonTitle + '</h2><div class="small">' + esc(T.ui.day + ' ' + (levelIdx + 1) + ': ' + T.levels[level.id]) + '</div>' + brains +
+      '<p><b>' + m + ' ' + T.ui.moves.toLowerCase() + '</b> · ' + T.ui.fromPar + ' ' + level.par + ' <span class="st">' + starsHTML(s) + '</span>' + (rec.best && rec.best < m ? ' · ' + T.ui.best + ' ' + rec.best : '') + '</p>' +
+      (badges.length ? '<div class="badges">' + badges.map(function (b) { return '<span>' + esc(b) + '</span>'; }).join('') + '</div>' : '') +
+      (nb ? '<div class="nobody"><div><b>' + M.nobody + '</b></div><div><b>' + esc(nb[0]) + '</b> ' + esc(nb[1]) + '</div></div>' : '') +
       '<div class="btns">' + (hasNext ? '<button class="primary next">' + T.ui.nextDay + ' ▶</button>' : '<p>' + T.ui.more + '</p>') +
       '<div class="row"><button class="again">' + T.ui.replay + '</button><button class="list">' + T.ui.levels + '</button></div>' +
       (test ? '<button class="mint copy">' + T.ui.copyReport + '</button>' : '') + '</div></div>');
@@ -609,6 +683,7 @@
     if (!game || game.state.won || document.visibilityState !== 'visible') return;
     game.stats.ms += 1000;
     if (test) updateTestBox();
+    if (!drag) refreshFaces();
     if (game.stats.ms % 10000 === 0) persist();
   }, 1000);
 
