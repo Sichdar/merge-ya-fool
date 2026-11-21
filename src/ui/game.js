@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var MYF = window.MYF, R = MYF.Rules, T = MYF.TEXT, A = MYF.Art, Sfx = MYF.Sfx, Store = MYF.Store;
-  var VERSION = '0.3.0';
+  var VERSION = '0.3.1';
   MYF.VERSION = VERSION;
   var LEVELS = MYF.DATA.levels;
   function $(id) { return document.getElementById(id); }
@@ -583,8 +583,7 @@
   function showMenu() {
     var l = openLayer('<div class="card"><h2>' + esc(T.levels[level.id]) + '</h2><div class="btns">' +
       '<button class="primary resume">' + T.ui.resume + '</button><button class="restart">' + T.ui.restart + '</button>' +
-      '<button class="list">' + T.ui.levels + '</button><button class="sound">Sound: ' + (Sfx.isOn() ? 'on' : 'off') + '</button>' +
-      (A.setLook ? '<button class="look">' + T.ui.look + ': ' + (A.rotten ? T.ui.lookRotten : T.ui.lookOriginal) + '</button>' : '') + '</div>' +
+      '<button class="list">' + T.ui.levels + '</button><button class="sound">Sound: ' + (Sfx.isOn() ? 'on' : 'off') + '</button></div>' +
       '<p class="small">v' + VERSION + (test ? ' · ' + T.ui.testOn : '') + '</p></div>', { outsideClose: true });
     on(l, '.resume', closeLayer);
     on(l, '.restart', function () {
@@ -596,8 +595,6 @@
     });
     on(l, '.list', function () { showList(); });
     on(l, '.sound', function (ev, n) { Sfx.setOn(!Sfx.isOn()); save.sound = Sfx.isOn(); persist(); n.textContent = 'Sound: ' + (Sfx.isOn() ? 'on' : 'off'); });
-    // Look (S07): original or drawn by Bobo. Save the game first; the page reloads and carries on from the same move.
-    on(l, '.look', function () { persist(); A.setLook(A.rotten ? 'original' : 'rotten'); });
   }
 
   function onWon() {

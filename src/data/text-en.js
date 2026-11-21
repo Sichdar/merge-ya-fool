@@ -73,7 +73,6 @@
     ui: {
       moves: 'Moves', par: 'par', undo: 'Oops', hint: 'Big Brain', menu: 'Menu', shake: 'Wobble',
       tapToStart: 'Tap to start', resume: 'Back to the mess', restart: 'Start again', levels: 'All days',
-      look: 'Look', lookOriginal: 'original', lookRotten: 'drawn by Bobo',
       sure: 'Start again? Your moves go back to 0.', yes: 'Yes, start again', no: 'No',
       noRoom: 'No room. Like, literally.', noCharges: 'It’s giving… empty', wrongOrder: 'Bruh.', blocked: 'Nope!',
       stuck: 'Oopsie! Want a Wobble?', stuckShake: 'Wobble the room (+3 moves)', stuckUndo: 'Oops (undo)', close: 'Close',

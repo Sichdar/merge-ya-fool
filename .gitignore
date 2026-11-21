@@ -4,6 +4,8 @@
 !/.nojekyll
 !/LICENSE
 !/index.html
-!/rotten.html
 !/phone-tests/
 !/src/
+# Rotten art pack (R6), retired 21/11/2026: kept on this PC as a reference, not online
+/src/art/rotten.js
+/src/rotten.css
