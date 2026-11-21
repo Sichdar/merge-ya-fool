@@ -60,11 +60,36 @@
       villain: 'This is my villain arc.',
       brains: ['You did it. Somehow.', 'Thinking ahead. Ish.', 'Ascended. The soup bows to you.'],
       brainNames: ['Small brain', 'Glowing brain', 'Galaxy brain'],
-      nobody: 'Nobody:',
-      nobodyLines: {
-        'c1-01': ['Bobo:', '*juggles the crown into the soup*'],
-        'c1-02': ['The egg:', '*refuses to hatch without socks*'],
-        'c1-03': ['The drawer:', 'CLANG CLANG CLANG']
+      // Win-screen meme box: several per day in different formats; one is picked at random
+      // on every win (never the same one twice in a row). Each line is [bold part, rest].
+      endings: {
+        'c1-01': [
+          [['Nobody:', ''], ['Bobo:', '*juggles the crown into the soup*']],
+          [['What Bobo tells people:', '"I rescued the crown."'], ['What happened:', 'A chick did. With a ladle.']],
+          [['BREAKING:', 'Crown found in soup. Soup "not available for comment".']],
+          [['The King:', '"Who knighted a chick?"'], ['Also the King:', '*knighted the chick*']],
+          [['New message from the King:', '"why does my crown smell like soup"'], ['Bobo:', '*left on read*']],
+          [['Bobo rates today:', '★★★★★'], ['', '"Soup was wet."']],
+          [['They don’t know', 'the soup is now 2% crown.']]
+        ],
+        'c1-02': [
+          [['Nobody:', ''], ['The egg:', '*refuses to hatch without socks*']],
+          [['Me:', '"It’s just an egg."'], ['The egg:', '*demands two (2) socks*']],
+          [['Doctor:', '"Your egg is cold."'], ['Bobo:', '*prescribes socks*']],
+          [['BREAKING:', 'Chick hatches in socks. Refuses to elaborate.']],
+          [['What Bobo tells people:', '"I am an egg expert."'], ['What happened:', 'He found a sock.']],
+          [['Day 1 of the chick:', 'still wearing the socks.'], ['Day 400:', 'still wearing the socks.']],
+          [['Bobo rates today:', '★★★★★'], ['', '"Egg was warm. Socks were sole mates."']]
+        ],
+        'c1-03': [
+          [['Nobody:', ''], ['The drawer:', 'CLANG CLANG CLANG']],
+          [['Bobo:', '"One spoon, please."'], ['The drawer:', '*chooses violence*']],
+          [['BREAKING:', 'King cries at ladle. Ladle "honoured".']],
+          [['What Bobo tells people:', '"I am a spoon whisperer."'], ['What happened:', 'The spoons yelled. He ran.']],
+          [['The King:', '*weeping*'], ['Sir Chick:', '*saluting*'], ['The squire:', '*eating popcorn*']],
+          [['Nobody:', ''], ['Absolutely nobody:', ''], ['The drawer at 3 a.m.:', 'clang.']],
+          [['Bobo rates today:', '★★☆☆☆'], ['', '"Too many spoons. Not enough soup."']]
+        ]
       },
       plan: 'My plan', reality: 'My plan (reality)',
       taskFailed: 'Task failed successfully.',
