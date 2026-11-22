@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var MYF = window.MYF, R = MYF.Rules, T = MYF.TEXT, A = MYF.Art, Sfx = MYF.Sfx, Store = MYF.Store;
-  var VERSION = '0.3.3';
+  var VERSION = '0.3.4';
   MYF.VERSION = VERSION;
   var LEVELS = MYF.DATA.levels;
   function $(id) { return document.getElementById(id); }
@@ -222,7 +222,7 @@
   function startLevel(idx, resume) {
     closeLayer();
     clearHint();
-    level = LEVELS[idx]; levelIdx = idx;
+    level = LEVELS[idx]; levelIdx = idx; winNote = null;
     game = new R.Game(level, resume && resume.level === level.id ? resume : null);
     sel = -1; noRoomCount = 0; faceUntil = {}; sideK = -1; mergeTimes = []; undoSaid = false;
     el.dayTitle.textContent = T.ui.day + ' ' + (idx + 1) + ' · ' + T.levels[level.id];
@@ -620,12 +620,15 @@
       (game.state.won ? 'Won' : 'Not finished') + ' in ' + game.moves() + ' moves (par ' + level.par + ', best possible ' + level.best + ') ' + '★★★'.slice(0, game.stars()),
       'Time ' + fmtTime(st.ms) + ' · undos ' + st.undos + ' · restarts ' + st.restarts + ' · wobbles ' + st.shakes + ' · hints ' + st.hints,
       'Actions: ' + st.log.join(' '),
+      // S5: what the win screen showed and how they reacted (playtest mode only, nothing saved)
+      (game.state.won && winNote ? 'Win screen: meme box "' + (winNote.box || 'none') + '" · joke ' + (winNote.joke || 'none') : ''),
       '(S spawn, M merge+tier, C combo, V move, W swap, D deliver, K wobble, U undo, R restart)',
-      deviceLine()].join('\n');
+      deviceLine()].filter(Boolean).join('\n');
   }
 
   // Win-screen meme box: random pick per win, never the same one twice in a row for a day
   var lastEnding = {};
+  var winNote = null; // S5: the meme box line and joke reaction of the last win, for the playtest report
   function pickEnding(id) {
     var list = M.endings && M.endings[id];
     if (!list || !list.length) return null;
@@ -646,6 +649,7 @@
     if (m <= level.par - 5) badges.push(M.speedrun);
     if (game.stats.undos >= 10) badges.push(M.undoEnjoyer);
     var nb = pickEnding(level.id), jk = M.jokes && M.jokes[level.id];
+    winNote = { box: nb ? nb[nb.length - 1].join(' ').trim() : '', joke: jk ? 'not tapped' : '' };
     var l = openLayer('<div class="card">' + (s === 3 ? '<div class="smug">' + A.charSVG('bobo', 'smug') + '</div>' : '') +
       '<h2>' + T.ui.wonTitle + '</h2><div class="small">' + esc(T.ui.day + ' ' + (levelIdx + 1) + ': ' + T.levels[level.id]) + '</div>' + brains +
       '<p><b>' + m + ' ' + T.ui.moves.toLowerCase() + '</b> · ' + T.ui.fromPar + ' ' + level.par + ' <span class="st">' + starsHTML(s) + '</span>' + (rec.best && rec.best < m ? ' · ' + T.ui.best + ' ' + rec.best : '') + '</p>' +
@@ -665,6 +669,7 @@
     function react(laughed) {
       var jb = l.querySelector('.joke .jb'); if (!jb) return;
       var lines = laughed ? M.jokeLaugh : M.jokeGroan;
+      if (winNote) winNote.joke = laughed ? '😂 laughed' : '🙄 groaned';
       jb.outerHTML = '<div class="jr"><span class="jf">' + A.charSVG('bobo', laughed ? 'laughing' : 'smug') + '</span><span>' + esc(lines[Math.floor(Math.random() * lines.length)]) + '</span></div>';
       Sfx.play(laughed ? 'star' : 'page', 2);
     }
