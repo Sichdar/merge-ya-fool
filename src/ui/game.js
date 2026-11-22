@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var MYF = window.MYF, R = MYF.Rules, T = MYF.TEXT, A = MYF.Art, Sfx = MYF.Sfx, Store = MYF.Store;
-  var VERSION = '0.3.2';
+  var VERSION = '0.3.3';
   MYF.VERSION = VERSION;
   var LEVELS = MYF.DATA.levels;
   function $(id) { return document.getElementById(id); }
@@ -645,12 +645,14 @@
     var badges = [];
     if (m <= level.par - 5) badges.push(M.speedrun);
     if (game.stats.undos >= 10) badges.push(M.undoEnjoyer);
-    var nb = pickEnding(level.id);
+    var nb = pickEnding(level.id), jk = M.jokes && M.jokes[level.id];
     var l = openLayer('<div class="card">' + (s === 3 ? '<div class="smug">' + A.charSVG('bobo', 'smug') + '</div>' : '') +
       '<h2>' + T.ui.wonTitle + '</h2><div class="small">' + esc(T.ui.day + ' ' + (levelIdx + 1) + ': ' + T.levels[level.id]) + '</div>' + brains +
       '<p><b>' + m + ' ' + T.ui.moves.toLowerCase() + '</b> · ' + T.ui.fromPar + ' ' + level.par + ' <span class="st">' + starsHTML(s) + '</span>' + (rec.best && rec.best < m ? ' · ' + T.ui.best + ' ' + rec.best : '') + '</p>' +
       (badges.length ? '<div class="badges">' + badges.map(function (b) { return '<span>' + esc(b) + '</span>'; }).join('') + '</div>' : '') +
       (nb ? '<div class="nobody">' + nb.map(function (ln) { return '<div><b>' + esc(ln[0]) + '</b>' + (ln[1] ? ' ' + esc(ln[1]) : '') + '</div>'; }).join('') + '</div>' : '') +
+      (jk ? '<div class="joke"><div class="jt">' + esc(M.jokeTitle) + '</div><div class="jq">' + esc(jk) + '</div>' +
+        '<div class="jb"><button class="jl" aria-label="Ha, I laughed">😂</button><button class="jg" aria-label="Groan">🙄</button></div></div>' : '') +
       '<div class="btns">' + (hasNext ? '<button class="primary next">' + T.ui.nextDay + ' ▶</button>' : '<p>' + T.ui.more + '</p>') +
       '<div class="row"><button class="again">' + T.ui.replay + '</button><button class="list">' + T.ui.levels + '</button></div>' +
       (test ? '<button class="mint copy">' + T.ui.copyReport + '</button>' : '') + '</div></div>');
@@ -659,6 +661,15 @@
     on(l, '.again', function () { startLevel(levelIdx); });
     on(l, '.list', showList);
     on(l, '.copy', function (ev, n) { copyText(report(), n); });
+    // Joke of the Day: Bobo reacts to 😂 or 🙄; nothing is saved
+    function react(laughed) {
+      var jb = l.querySelector('.joke .jb'); if (!jb) return;
+      var lines = laughed ? M.jokeLaugh : M.jokeGroan;
+      jb.outerHTML = '<div class="jr"><span class="jf">' + A.charSVG('bobo', laughed ? 'laughing' : 'smug') + '</span><span>' + esc(lines[Math.floor(Math.random() * lines.length)]) + '</span></div>';
+      Sfx.play(laughed ? 'star' : 'page', 2);
+    }
+    on(l, '.jl', function () { react(true); });
+    on(l, '.jg', function () { react(false); });
   }
 
   function showList() {

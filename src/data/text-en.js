@@ -91,6 +91,16 @@
           [['Bobo rates today:', '★★☆☆☆'], ['', '"Too many spoons. Not enough soup."']]
         ]
       },
+      // Bobo's Joke of the Day (S3): one per day on the win screen; 😂 / 🙄 just make Bobo react.
+      // Nothing is saved or sent anywhere.
+      jokeTitle: 'Bobo’s Joke of the Day',
+      jokes: {
+        'c1-01': 'Why did the crown jump in the soup? It wanted to feel souper-ior.',
+        'c1-02': 'Why won’t the egg listen to jokes? It might crack up. (It did. That’s how it hatched.)',
+        'c1-03': 'Why are spoons great at parties? They really know how to stir things up.'
+      },
+      jokeLaugh: ['You laughed! I’m putting that on my CV.', 'A fan! I have one (1) fan!', 'Don’t tell the King. He only laughs at soup.'],
+      jokeGroan: ['Too late. It’s in your brain now.', 'Rude. Accurate, but rude.', 'Fine. Tomorrow’s is worse. Promise.'],
       plan: 'My plan', reality: 'My plan (reality)',
       taskFailed: 'Task failed successfully.',
       speedrun: 'Speedrun any%', undoEnjoyer: 'Undo enjoyer'

@@ -198,6 +198,14 @@ button[disabled] { opacity: .45; }
 .smug { width: 76px; height: 76px; margin: -52px auto 0; }
 .badges { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 6px 0; }
 .badges span { background: var(--mint); border: 2px solid var(--ink); border-radius: 10px; padding: 2px 8px; font-weight: 800; font-size: 13px; }
+.joke { background: #FFF4C9; border: 2px solid var(--ink); border-radius: 12px; padding: 6px 10px; margin: 8px 0 0; font-size: 14px; line-height: 1.35; }
+.joke .jt { font-weight: 900; font-size: 12px; letter-spacing: .02em; }
+.joke .jq { margin: 2px 0 4px; }
+.joke .jb { display: flex; gap: 10px; justify-content: center; }
+.joke .jb button { font-size: 20px; padding: 2px 16px; min-height: 0; }
+.joke .jr { display: flex; align-items: center; gap: 8px; justify-content: center; font-weight: 800; animation: cardIn .2s ease-out; }
+.joke .jf { width: 34px; height: 34px; flex: none; }
+.joke .jf svg { width: 100%; height: 100%; }
 .nobody { text-align: left; background: var(--bg); border: 2px dashed var(--soft); border-radius: 12px; padding: 6px 10px; margin: 8px 0 0; font-size: 14px; line-height: 1.35; }
 
 /* --- level list --- */
